@@ -17,8 +17,8 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;col
 .brand{border-radius:13px;padding:6px 10px}.brand b{font-size:clamp(15px,3vw,25px)}.brand small{display:block;font-size:8px;opacity:.7}
 .stats{display:flex;gap:5px}.stat{min-width:55px;text-align:center;border-radius:11px;padding:4px 7px}.stat small{display:block;font-size:7px;opacity:.7}.stat b{font-size:15px}
 #qbox{position:absolute;top:14%;left:50%;transform:translateX(-50%);width:min(94vw,760px);text-align:center}
-#qno{display:inline-block;background:#030817c9;border-radius:20px;padding:3px 9px;font-size:9px}
-#question{margin-top:5px;border-radius:14px;padding:9px 12px;font-size:clamp(17px,4vw,32px);font-weight:900;line-height:1.15;text-shadow:0 3px 10px #000}
+#qno{display:inline-block;font-weight:900;background:#030817c9;border-radius:20px;padding:3px 9px;font-size:9px}
+#question{white-space:pre-line;margin-top:5px;border-radius:14px;padding:9px 12px;font-size:clamp(17px,4vw,32px);font-weight:900;line-height:1.15;text-shadow:0 3px 10px #000}
 #answers{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);width:min(94vw,760px);display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
 .answer{min-height:52px;border-radius:14px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:clamp(13px,3vw,21px)}
 .answer.lock{border:2px solid #fff;box-shadow:0 0 22px #fff8}.answer.correct{background:#008a58e8}.answer.wrong{background:#b02038e8}
@@ -30,7 +30,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;col
 .card h1{margin:0;font-size:clamp(31px,8vw,55px);letter-spacing:2px}.card h2{margin:5px 0}.card p{font-size:13px;line-height:1.5;opacity:.82}
 button{width:100%;padding:14px;border:0;border-radius:13px;background:#fff;color:#061020;font-weight:900;font-size:17px}
 #error{display:none}.err{white-space:pre-line;text-align:left;background:#0005;padding:11px;border-radius:10px;font-size:12px}
-#match{display:none}.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.col{display:flex;flex-direction:column;gap:8px}.mi{min-height:50px;border:2px solid #fff4;border-radius:12px;padding:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}.mi.target{border-color:#fff;box-shadow:0 0 18px #fff8}.mi.matched{opacity:.4;border-color:#5cffb0}
 #finish{display:none}.final{font-size:50px;font-weight:900}
 @media(max-width:600px){.top{top:5px;left:5px;right:5px}.brand{padding:5px 8px}.brand b{font-size:14px}.stat{min-width:50px;padding:3px 5px}.stat b{font-size:13px}#qbox{top:13%}.answer{min-height:48px;font-size:12px}}
 @media(orientation:landscape) and (max-height:500px){#qbox{top:19%}#answers{bottom:5%;grid-template-columns:repeat(4,1fr)}.answer{min-height:40px}}
@@ -68,14 +67,6 @@ button{width:100%;padding:14px;border:0;border-radius:13px;background:#fff;color
   <div class="card"><h2>⚠️ RALAT</h2><div class="err" id="errmsg"></div><br><button onclick="location.reload()">CUBA SEMULA</button></div>
 </div>
 
-<div class="overlay" id="match">
-  <div class="card"><h2>🎯 MATCHING CHALLENGE</h2>
-    <p>Tahan pada perkataan untuk GRAB. Gerakkan jari ke kategori dan tahan untuk MATCH.</p>
-    <div class="matchgrid"><div class="col" id="words"></div><div class="col" id="cats"></div></div>
-    <p id="mstatus">Pilih satu perkataan.</p>
-  </div>
-</div>
-
 <div class="overlay" id="finish">
   <div class="card"><h1>🏆 TAMAT!</h1><p>PECUTAN AKHIR</p><div class="final" id="finalscore">0</div><p id="finalmsg"></p><button onclick="location.reload()">MAIN SEMULA</button></div>
 </div>
@@ -96,23 +87,72 @@ const activate=$("activate"), statusEl=$("status"), errmsg=$("errmsg");
 let stream=null, handLandmarker=null, lastTime=-1, ready=false;
 let pointer={x:0,y:0,visible:false}, target=null, targetAt=0;
 const HOLD=600;
-let score=0,combo=0,qi=0,matchMode=false,selectedWord=null,matched=0;
-let currentMatch=null, matchTarget=null, matchAt=0, particles=[];
+let score=0,combo=0,qi=0,particles=[];
 
 const questions=[
- ["Antara berikut, haiwan yang manakah ialah herbivor?",["Harimau","Kambing","Helang","Buaya"],1],
- ["Haiwan yang makan tumbuhan dan haiwan lain dikenali sebagai...",["Herbivor","Karnivor","Omnivor","Mamalia"],2],
- ["Haiwan yang mempunyai tulang belakang dikenali sebagai...",["Vertebrata","Invertebrata","Serangga","Moluska"],0],
- ["Antara berikut, yang manakah merupakan mamalia?",["Ayam","Ikan","Kucing","Katak"],2],
- ["Apakah fungsi utama rangka manusia?",["Membantu penghadaman","Menyokong dan melindungi badan","Menghasilkan makanan","Mengawal suhu air"],1],
- ["Haiwan yang bernafas menggunakan insang ialah...",["Ikan","Kucing","Ayam","Belalang"],0],
- ["Manusia tergolong dalam kumpulan...",["Mamalia","Reptilia","Amfibia","Ikan"],0],
- ["Antara berikut, yang manakah karnivor?",["Arnab","Lembu","Harimau","Kambing"],2],
- ["Apakah yang diperlukan manusia untuk terus hidup?",["Udara","Batu","Plastik","Kaca"],0],
- ["Haiwan yang tidak mempunyai tulang belakang dikenali sebagai...",["Vertebrata","Mamalia","Invertebrata","Reptilia"],2]
+  {
+    type:"PILIH JAWAPAN",
+    q:"Haiwan yang manakah ialah herbivor?",
+    answers:["🐯 Harimau","🐐 Kambing","🦅 Helang","🐊 Buaya"],
+    correct:1
+  },
+  {
+    type:"CARI HAIWAN",
+    q:"🔎 CARI HAIWAN\nCari haiwan yang merupakan KARNIVOR.",
+    answers:["🐐 Kambing","🐄 Lembu","🐯 Harimau","🐇 Arnab"],
+    correct:2
+  },
+  {
+    type:"SIAPA SAYA?",
+    q:"🕵️ SIAPA SAYA?\nSaya mempunyai bulu, melahirkan anak dan menyusukan anak. Siapakah saya?",
+    answers:["🐟 Ikan","🐔 Ayam","🐱 Kucing","🐸 Katak"],
+    correct:2
+  },
+  {
+    type:"ODD ONE OUT",
+    q:"🚨 ODD ONE OUT\nYang manakah BERBEZA daripada yang lain?",
+    answers:["🐐 Kambing","🐄 Lembu","🐇 Arnab","🐯 Harimau"],
+    correct:3
+  },
+  {
+    type:"PILIH JAWAPAN",
+    q:"Apakah fungsi utama rangka manusia?",
+    answers:["Membantu penghadaman","Menyokong dan melindungi badan","Menghasilkan makanan","Mengawal suhu badan"],
+    correct:1
+  },
+  {
+    type:"CARI HAIWAN",
+    q:"🔎 CARI HAIWAN\nCari haiwan yang bernafas menggunakan INSANG.",
+    answers:["🐟 Ikan","🐱 Kucing","🐔 Ayam","🦗 Belalang"],
+    correct:0
+  },
+  {
+    type:"SIAPA SAYA?",
+    q:"🕵️ SIAPA SAYA?\nSaya mempunyai tulang belakang dan merupakan haiwan yang menyusukan anak. Siapakah saya?",
+    answers:["🦋 Rama-rama","🐱 Kucing","🐟 Ikan","🐸 Katak"],
+    correct:1
+  },
+  {
+    type:"ODD ONE OUT",
+    q:"🚨 ODD ONE OUT\nYang manakah bukan karnivor?",
+    answers:["🐯 Harimau","🦁 Singa","🦅 Helang","🐐 Kambing"],
+    correct:3
+  },
+  {
+    type:"PILIH JAWAPAN",
+    q:"Manusia tergolong dalam kumpulan haiwan...",
+    answers:["Mamalia","Reptilia","Amfibia","Ikan"],
+    correct:0
+  },
+  {
+    type:"CABARAN AKHIR",
+    q:"🏆 CABARAN AKHIR\nHaiwan yang tidak mempunyai tulang belakang dikenali sebagai...",
+    answers:["Vertebrata","Mamalia","Invertebrata","Reptilia"],
+    correct:2
+  }
 ];
 
-const matches=[
+[
  {words:["Kucing","Helang","Kambing"],cats:["Herbivor","Karnivor","Omnivor"],ok:{Kucing:"Karnivor",Helang:"Karnivor",Kambing:"Herbivor"}},
  {words:["Manusia","Ikan","Ayam"],cats:["Mamalia","Ikan","Burung"],ok:{Manusia:"Mamalia",Ikan:"Ikan",Ayam:"Burung"}}
 ];
@@ -246,11 +286,14 @@ function startGame(){score=0;combo=0;qi=0;updateStats();showQuestion()}
 function showQuestion(){
   if(qi>=questions.length){finishGame();return}
   const q=questions[qi];
-  $("qno").textContent=`SOALAN ${qi+1} DARIPADA 10`;
-  $("question").textContent=q[0];
+  $("qno").textContent=`${q.type} • SOALAN ${qi+1}/10`;
+  $("question").textContent=q.q;
   $("answers").innerHTML="";
-  q[1].forEach((a,i)=>{
-    const d=document.createElement("div");d.className="answer";d.textContent=a;d.dataset.i=i;
+  q.answers.forEach((a,i)=>{
+    const d=document.createElement("div");
+    d.className="answer";
+    d.textContent=a;
+    d.dataset.i=i;
     $("answers").appendChild(d);
   });
   $("barin").style.width="0%";
@@ -258,54 +301,27 @@ function showQuestion(){
 
 function next(){
   qi++;
-  if(qi===5){beginMatch();return}
   showQuestion();
 }
 
 function answer(el){
   if(el.dataset.used)return;
   el.dataset.used="1";
-  const ok=+el.dataset.i===questions[qi][2];
-  if(ok){el.classList.add("correct");combo++;score+=100+combo*20;burst(el,true)}
-  else{el.classList.add("wrong");combo=0;score=Math.max(0,score-20);burst(el,false)}
-  updateStats();resetTarget();
+  const ok=+el.dataset.i===questions[qi].correct;
+  if(ok){
+    el.classList.add("correct");
+    combo++;
+    score+=100+combo*20;
+    burst(el,true);
+  }else{
+    el.classList.add("wrong");
+    combo=0;
+    score=Math.max(0,score-20);
+    burst(el,false);
+  }
+  updateStats();
+  resetTarget();
   setTimeout(next,650);
-}
-
-function beginMatch(){
-  matchMode=true;selectedWord=null;matched=0;
-  currentMatch=matches[Math.floor(Math.random()*matches.length)];
-  $("words").innerHTML="";$("cats").innerHTML="";
-  currentMatch.words.forEach(v=>makeMatch("words","word",v));
-  currentMatch.cats.forEach(v=>makeMatch("cats","cat",v));
-  $("mstatus").textContent="Pilih satu perkataan.";
-  match.style.display="flex";
-}
-
-function makeMatch(parent,type,value){
-  const d=document.createElement("div");d.className="mi";d.textContent=value;d.dataset.type=type;d.dataset.value=value;
-  $(parent).appendChild(d);
-}
-
-function matchAction(el){
-  if(el.classList.contains("matched"))return;
-  if(el.dataset.type==="word"){
-    selectedWord=el.dataset.value;
-    document.querySelectorAll(".mi").forEach(x=>x.classList.remove("target"));
-    el.classList.add("target");
-    $("mstatus").textContent=`GRAB: ${selectedWord} → pilih kategori.`;
-    return;
-  }
-  if(el.dataset.type==="cat"&&selectedWord){
-    if(currentMatch.ok[selectedWord]===el.dataset.value){
-      el.classList.add("matched");
-      [...document.querySelectorAll(".mi")].find(x=>x.dataset.type==="word"&&x.dataset.value===selectedWord)?.classList.add("matched");
-      matched++;combo++;score+=150;burst(el,true);selectedWord=null;
-      $("mstatus").textContent="✓ Betul!";
-      updateStats();
-      if(matched===3)setTimeout(()=>{match.style.display="none";matchMode=false;qi=5;showQuestion()},700);
-    }else{combo=0;score=Math.max(0,score-30);$("mstatus").textContent="✗ Cuba lagi.";updateStats()}
-  }
 }
 
 function process(result){
@@ -314,7 +330,7 @@ function process(result){
   const p=result.landmarks[0][8];
   if(!p){resetTarget();return}
   pointer.x=(1-p.x)*innerWidth;pointer.y=p.y*innerHeight;pointer.visible=true;
-  if(matchMode)handleMatchPointer();else handleAnswerPointer();
+  handleAnswerPointer();
 }
 
 function handleAnswerPointer(){
