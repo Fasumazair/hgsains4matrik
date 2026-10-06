@@ -1,2025 +1,336 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ms">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#050914">
-<title>PECUTAN AKHIR - Sains Tahun 4</title>
-
+<title>PECUTAN AKHIR — Sains Tahun 4</title>
 <style>
-*{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
-}
-
-html,body{
-  margin:0;
-  padding:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  font-family:Arial,Helvetica,sans-serif;
-  background:#050914;
-  color:#fff;
-}
-
-#camera{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  transform:scaleX(-1);
-  z-index:0;
-  background:#050914;
-}
-
-#gameCanvas{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:2;
-  pointer-events:none;
-}
-
-#shade{
-  position:fixed;
-  inset:0;
-  z-index:1;
-  background:linear-gradient(
-    180deg,
-    rgba(0,0,0,.48) 0%,
-    rgba(0,0,0,.08) 38%,
-    rgba(0,0,0,.42) 100%
-  );
-  pointer-events:none;
-}
-
-#ui{
-  position:fixed;
-  inset:0;
-  z-index:5;
-  pointer-events:none;
-}
-
-.topbar{
-  position:absolute;
-  top:10px;
-  left:10px;
-  right:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-}
-
-.brand{
-  background:rgba(4,9,20,.75);
-  border:1px solid rgba(255,255,255,.22);
-  border-radius:14px;
-  padding:7px 12px;
-  backdrop-filter:blur(8px);
-}
-
-.brand .title{
-  font-size:clamp(15px,3vw,26px);
-  font-weight:900;
-  letter-spacing:1px;
-}
-
-.brand .sub{
-  font-size:9px;
-  opacity:.75;
-  margin-top:2px;
-}
-
-.stats{
-  display:flex;
-  gap:6px;
-}
-
-.stat{
-  min-width:66px;
-  text-align:center;
-  background:rgba(4,9,20,.75);
-  border:1px solid rgba(255,255,255,.22);
-  border-radius:12px;
-  padding:5px 8px;
-  backdrop-filter:blur(8px);
-}
-
-.stat small{
-  display:block;
-  font-size:8px;
-  opacity:.7;
-}
-
-.stat b{
-  display:block;
-  font-size:16px;
-}
-
-#questionPanel{
-  position:absolute;
-  left:50%;
-  top:15%;
-  transform:translateX(-50%);
-  width:min(92vw,700px);
-  text-align:center;
-}
-
-#questionNumber{
-  font-size:11px;
-  font-weight:bold;
-  background:rgba(4,9,20,.7);
-  display:inline-block;
-  padding:4px 10px;
-  border-radius:20px;
-  margin-bottom:5px;
-}
-
-#question{
-  font-size:clamp(18px,4vw,34px);
-  font-weight:900;
-  line-height:1.15;
-  text-shadow:0 3px 12px #000;
-  background:rgba(4,9,20,.55);
-  border-radius:14px;
-  padding:10px 14px;
-  backdrop-filter:blur(6px);
-}
-
-#answers{
-  position:absolute;
-  left:50%;
-  bottom:8%;
-  transform:translateX(-50%);
-  width:min(94vw,760px);
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-
-.answer{
-  min-height:55px;
-  border:2px solid rgba(255,255,255,.4);
-  border-radius:15px;
-  background:rgba(4,12,30,.78);
-  color:white;
-  font-size:clamp(14px,3vw,22px);
-  font-weight:800;
-  padding:8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  backdrop-filter:blur(7px);
-  box-shadow:0 5px 18px rgba(0,0,0,.25);
-}
-
-.answer.locked{
-  border-color:#fff;
-  box-shadow:0 0 25px rgba(255,255,255,.8);
-}
-
-.answer.correct{
-  background:rgba(0,170,90,.85);
-}
-
-.answer.wrong{
-  background:rgba(190,30,50,.85);
-}
-
-#progress{
-  position:absolute;
-  left:50%;
-  top:calc(15% - 12px);
-  transform:translateX(-50%);
-  width:min(92vw,700px);
-  height:4px;
-  border-radius:20px;
-  background:rgba(255,255,255,.2);
-  overflow:hidden;
-}
-
-#progressBar{
-  height:100%;
-  width:0%;
-  background:#fff;
-  transition:width:.25s;
-}
-
-#holdInfo{
-  position:absolute;
-  left:50%;
-  bottom:2%;
-  transform:translateX(-50%);
-  font-size:10px;
-  opacity:.75;
-  text-align:center;
-  background:rgba(0,0,0,.45);
-  padding:4px 8px;
-  border-radius:10px;
-}
-
-#startScreen,
-#errorScreen,
-#matchingScreen{
-  position:fixed;
-  inset:0;
-  z-index:20;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  background:rgba(2,6,18,.9);
-  backdrop-filter:blur(10px);
-}
-
-.card{
-  width:min(92vw,560px);
-  max-height:90vh;
-  overflow:auto;
-  background:rgba(10,18,38,.94);
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:22px;
-  padding:25px;
-  text-align:center;
-  box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-
-.card h1{
-  margin:0 0 8px;
-  font-size:clamp(30px,8vw,55px);
-  letter-spacing:2px;
-}
-
-.card h2{
-  margin:0 0 10px;
-}
-
-.card p{
-  font-size:14px;
-  line-height:1.5;
-  opacity:.82;
-}
-
-#activateBtn{
-  margin-top:15px;
-  width:100%;
-  border:0;
-  border-radius:15px;
-  padding:15px;
-  font-size:18px;
-  font-weight:900;
-  background:#fff;
-  color:#07101e;
-  cursor:pointer;
-}
-
-#activateBtn:disabled{
-  opacity:.5;
-}
-
-#errorScreen{
-  display:none;
-}
-
-#errorText{
-  white-space:pre-line;
-  text-align:left;
-  background:rgba(0,0,0,.35);
-  padding:12px;
-  border-radius:10px;
-  font-size:13px;
-}
-
-#matchingScreen{
-  display:none;
-}
-
-.match-card{
-  width:min(94vw,760px);
-}
-
-.match-title{
-  font-size:clamp(22px,5vw,34px);
-  font-weight:900;
-  margin-bottom:5px;
-}
-
-.match-help{
-  font-size:11px;
-  opacity:.75;
-  margin-bottom:14px;
-}
-
-.match-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  align-items:start;
-}
-
-.match-column{
-  display:flex;
-  flex-direction:column;
-  gap:9px;
-}
-
-.match-item{
-  min-height:54px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  border:2px solid rgba(255,255,255,.3);
-  border-radius:13px;
-  padding:8px;
-  background:rgba(255,255,255,.08);
-  font-weight:900;
-  font-size:14px;
-}
-
-.match-item.target{
-  border-color:#fff;
-  box-shadow:0 0 20px rgba(255,255,255,.7);
-}
-
-.match-item.matched{
-  opacity:.45;
-  border-color:#5cffb0;
-}
-
-#matchStatus{
-  margin-top:12px;
-  font-size:12px;
-  min-height:18px;
-}
-
-#finishScreen{
-  position:fixed;
-  inset:0;
-  z-index:30;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:rgba(2,6,18,.9);
-  backdrop-filter:blur(10px);
-}
-
-.finish-score{
-  font-size:52px;
-  font-weight:900;
-}
-
-button{
-  font-family:inherit;
-}
-
-@media(max-width:600px){
-  .topbar{
-    top:6px;
-    left:6px;
-    right:6px;
-  }
-
-  .brand{
-    padding:5px 8px;
-  }
-
-  .brand .title{
-    font-size:14px;
-  }
-
-  .brand .sub{
-    font-size:7px;
-  }
-
-  .stats{
-    gap:3px;
-  }
-
-  .stat{
-    min-width:53px;
-    padding:4px 5px;
-  }
-
-  .stat small{
-    font-size:7px;
-  }
-
-  .stat b{
-    font-size:13px;
-  }
-
-  #questionPanel{
-    top:13%;
-  }
-
-  #answers{
-    bottom:7%;
-    gap:6px;
-  }
-
-  .answer{
-    min-height:49px;
-    border-radius:12px;
-    font-size:13px;
-  }
-
-  .card{
-    padding:20px;
-  }
-
-  .match-grid{
-    gap:10px;
-  }
-
-  .match-item{
-    min-height:48px;
-    font-size:12px;
-  }
-}
-
-@media(orientation:landscape) and (max-height:500px){
-  #questionPanel{
-    top:19%;
-  }
-
-  #answers{
-    bottom:5%;
-    grid-template-columns:repeat(4,1fr);
-  }
-
-  .answer{
-    min-height:42px;
-    font-size:12px;
-  }
-}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;color:#fff;font-family:Arial,sans-serif}
+#camera{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#050914;z-index:0}
+#shade{position:fixed;inset:0;background:linear-gradient(180deg,#0008,#0001 45%,#0007);z-index:1;pointer-events:none}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
+#ui{position:fixed;inset:0;z-index:5;pointer-events:none}
+.top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:6px}
+.brand,.stat,.question,.answer,.hint{background:#030817c9;border:1px solid #ffffff35;backdrop-filter:blur(7px)}
+.brand{border-radius:13px;padding:6px 10px}.brand b{font-size:clamp(15px,3vw,25px)}.brand small{display:block;font-size:8px;opacity:.7}
+.stats{display:flex;gap:5px}.stat{min-width:55px;text-align:center;border-radius:11px;padding:4px 7px}.stat small{display:block;font-size:7px;opacity:.7}.stat b{font-size:15px}
+#qbox{position:absolute;top:14%;left:50%;transform:translateX(-50%);width:min(94vw,760px);text-align:center}
+#qno{display:inline-block;background:#030817c9;border-radius:20px;padding:3px 9px;font-size:9px}
+#question{margin-top:5px;border-radius:14px;padding:9px 12px;font-size:clamp(17px,4vw,32px);font-weight:900;line-height:1.15;text-shadow:0 3px 10px #000}
+#answers{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);width:min(94vw,760px);display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.answer{min-height:52px;border-radius:14px;padding:8px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:clamp(13px,3vw,21px)}
+.answer.lock{border:2px solid #fff;box-shadow:0 0 22px #fff8}.answer.correct{background:#008a58e8}.answer.wrong{background:#b02038e8}
+#bar{position:absolute;top:calc(14% - 4px);left:50%;transform:translateX(-50%);width:min(94vw,760px);height:4px;background:#fff2;border-radius:9px;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:#fff}
+.hint{position:absolute;bottom:1%;left:50%;transform:translateX(-50%);font-size:9px;padding:3px 7px;border-radius:8px;opacity:.8}
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:#020612eF;backdrop-filter:blur(10px)}
+.card{width:min(94vw,560px);max-height:92vh;overflow:auto;background:#0a1226f5;border:1px solid #fff3;border-radius:20px;padding:23px;text-align:center;box-shadow:0 20px 60px #0009}
+.card h1{margin:0;font-size:clamp(31px,8vw,55px);letter-spacing:2px}.card h2{margin:5px 0}.card p{font-size:13px;line-height:1.5;opacity:.82}
+button{width:100%;padding:14px;border:0;border-radius:13px;background:#fff;color:#061020;font-weight:900;font-size:17px}
+#error{display:none}.err{white-space:pre-line;text-align:left;background:#0005;padding:11px;border-radius:10px;font-size:12px}
+#match{display:none}.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.col{display:flex;flex-direction:column;gap:8px}.mi{min-height:50px;border:2px solid #fff4;border-radius:12px;padding:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}.mi.target{border-color:#fff;box-shadow:0 0 18px #fff8}.mi.matched{opacity:.4;border-color:#5cffb0}
+#finish{display:none}.final{font-size:50px;font-weight:900}
+@media(max-width:600px){.top{top:5px;left:5px;right:5px}.brand{padding:5px 8px}.brand b{font-size:14px}.stat{min-width:50px;padding:3px 5px}.stat b{font-size:13px}#qbox{top:13%}.answer{min-height:48px;font-size:12px}}
+@media(orientation:landscape) and (max-height:500px){#qbox{top:19%}#answers{bottom:5%;grid-template-columns:repeat(4,1fr)}.answer{min-height:40px}}
 </style>
 </head>
-
 <body>
-
 <video id="camera" autoplay playsinline muted></video>
-<canvas id="gameCanvas"></canvas>
-<div id="shade"></div>
+<div id="shade"></div><canvas id="fx"></canvas>
 
 <div id="ui">
-
-  <div class="topbar">
-    <div class="brand">
-      <div class="title">⚡ PECUTAN AKHIR</div>
-      <div class="sub">Created by CIkgu Fatimah</div>
-    </div>
-
+  <div class="top">
+    <div class="brand"><b>⚡ PECUTAN AKHIR</b><small>Created by CIkgu Fatimah</small></div>
     <div class="stats">
-      <div class="stat">
-        <small>SKOR</small>
-        <b id="score">0</b>
-      </div>
-
-      <div class="stat">
-        <small>COMBO</small>
-        <b id="combo">0</b>
-      </div>
-
-      <div class="stat">
-        <small>SOALAN</small>
-        <b id="counter">0/10</b>
-      </div>
+      <div class="stat"><small>SKOR</small><b id="score">0</b></div>
+      <div class="stat"><small>COMBO</small><b id="combo">0</b></div>
+      <div class="stat"><small>SOALAN</small><b id="count">0/10</b></div>
     </div>
   </div>
-
-  <div id="progress">
-    <div id="progressBar"></div>
-  </div>
-
-  <div id="questionPanel">
-    <div id="questionNumber">SAINS TAHUN 4</div>
-    <div id="question">Sila aktifkan kamera.</div>
-  </div>
-
+  <div id="bar"><i id="barin"></i></div>
+  <div id="qbox"><div id="qno">SAINS TAHUN 4</div><div class="question" id="question">Sila aktifkan kamera.</div></div>
   <div id="answers"></div>
-
-  <div id="holdInfo">
-    Tunjukkan hujung jari telunjuk • Tahan 0.6 saat
-  </div>
-
+  <div class="hint">Jari telunjuk = cursor • Tahan 0.6 saat</div>
 </div>
 
-<!-- START -->
-<div id="startScreen">
+<div class="overlay" id="start">
   <div class="card">
-    <h1>⚡ PECUTAN AKHIR</h1>
-    <h2>SAINS TAHUN 4</h2>
-
-    <p>
-      Gunakan <b>jari telunjuk</b> sebagai cursor.
-      Halakan jari pada jawapan dan tahan selama
-      <b>0.6 saat</b> untuk memilih.
-    </p>
-
-    <p>
-      Pastikan muka dan tangan kelihatan jelas dalam kamera.
-    </p>
-
-    <button id="activateBtn">ACTIVATE CAMERA</button>
-
-    <p id="loadingText"></p>
+    <h1>⚡ PECUTAN AKHIR</h1><h2>SAINS TAHUN 4</h2>
+    <p>Gunakan <b>hujung jari telunjuk sahaja</b>. Halakan pada jawapan dan tahan 0.6 saat.</p>
+    <button id="activate">ACTIVATE CAMERA</button>
+    <p id="status">Kamera belum diaktifkan.</p>
   </div>
 </div>
 
-<!-- ERROR -->
-<div id="errorScreen">
-  <div class="card">
-    <h2>⚠️ CAMERA / TRACKING ERROR</h2>
-    <div id="errorText"></div>
-    <button onclick="location.reload()">CUBA SEMULA</button>
+<div class="overlay" id="error">
+  <div class="card"><h2>⚠️ RALAT</h2><div class="err" id="errmsg"></div><br><button onclick="location.reload()">CUBA SEMULA</button></div>
+</div>
+
+<div class="overlay" id="match">
+  <div class="card"><h2>🎯 MATCHING CHALLENGE</h2>
+    <p>Tahan pada perkataan untuk GRAB. Gerakkan jari ke kategori dan tahan untuk MATCH.</p>
+    <div class="matchgrid"><div class="col" id="words"></div><div class="col" id="cats"></div></div>
+    <p id="mstatus">Pilih satu perkataan.</p>
   </div>
 </div>
 
-<!-- MATCHING -->
-<div id="matchingScreen">
-  <div class="card match-card">
-
-    <div class="match-title">🎯 MATCHING CHALLENGE</div>
-
-    <div class="match-help">
-      Tuding perkataan di kiri dan tahan untuk GRAB.
-      Gerakkan tangan ke kategori di kanan dan tahan untuk MATCH.
-    </div>
-
-    <div class="match-grid">
-
-      <div class="match-column" id="wordColumn"></div>
-
-      <div class="match-column" id="categoryColumn"></div>
-
-    </div>
-
-    <div id="matchStatus"></div>
-
-  </div>
+<div class="overlay" id="finish">
+  <div class="card"><h1>🏆 TAMAT!</h1><p>PECUTAN AKHIR</p><div class="final" id="finalscore">0</div><p id="finalmsg"></p><button onclick="location.reload()">MAIN SEMULA</button></div>
 </div>
 
-<!-- FINISH -->
-<div id="finishScreen">
-  <div class="card">
-    <h1>🏆 TAMAT!</h1>
-    <p>PECUTAN AKHIR SELESAI</p>
-
-    <div class="finish-score" id="finalScore">0</div>
-
-    <p id="finalMessage"></p>
-
-    <button onclick="location.reload()">MAIN SEMULA</button>
-  </div>
-</div>
-
-<script type="module">
+<script>
+"use strict";
 
 /* =========================================================
-   PECUTAN AKHIR
-   SAINS TAHUN 4
-   MediaPipe Hand Landmarker
-   ONE-FINGER POINTER
+   KAMERA DIASINGKAN DARIPADA MEDIAPIPE
+   Ini penting: jika CDN MediaPipe bermasalah, butang kamera
+   masih boleh berfungsi dan ralat boleh dipaparkan.
    ========================================================= */
 
-import {
-  HandLandmarker,
-  FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm";
+const $=id=>document.getElementById(id);
+const video=$("camera"), canvas=$("fx"), ctx=canvas.getContext("2d");
+const start=$("start"), error=$("error"), match=$("match"), finish=$("finish");
+const activate=$("activate"), statusEl=$("status"), errmsg=$("errmsg");
+let stream=null, handLandmarker=null, lastTime=-1, ready=false;
+let pointer={x:0,y:0,visible:false}, target=null, targetAt=0;
+const HOLD=600;
+let score=0,combo=0,qi=0,matchMode=false,selectedWord=null,matched=0;
+let currentMatch=null, matchTarget=null, matchAt=0, particles=[];
 
-
-/* =========================================================
-   ELEMENTS
-   ========================================================= */
-
-const video = document.getElementById("camera");
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const startScreen = document.getElementById("startScreen");
-const errorScreen = document.getElementById("errorScreen");
-const matchingScreen = document.getElementById("matchingScreen");
-const finishScreen = document.getElementById("finishScreen");
-
-const activateBtn = document.getElementById("activateBtn");
-const loadingText = document.getElementById("loadingText");
-const errorText = document.getElementById("errorText");
-
-const questionEl = document.getElementById("question");
-const questionNumberEl = document.getElementById("questionNumber");
-const answersEl = document.getElementById("answers");
-
-const scoreEl = document.getElementById("score");
-const comboEl = document.getElementById("combo");
-const counterEl = document.getElementById("counter");
-const progressBar = document.getElementById("progressBar");
-
-const wordColumn = document.getElementById("wordColumn");
-const categoryColumn = document.getElementById("categoryColumn");
-const matchStatus = document.getElementById("matchStatus");
-
-const finalScore = document.getElementById("finalScore");
-const finalMessage = document.getElementById("finalMessage");
-
-
-/* =========================================================
-   STATE
-   ========================================================= */
-
-let handLandmarker = null;
-let stream = null;
-let trackingReady = false;
-let gameStarted = false;
-
-let score = 0;
-let combo = 0;
-let questionIndex = 0;
-
-let pointer = {
-  x: 0,
-  y: 0,
-  visible: false
-};
-
-let targetElement = null;
-let targetStartTime = 0;
-let HOLD_TIME = 600;
-
-let lastVideoTime = -1;
-let animationFrame = null;
-
-let audioContext = null;
-
-let particles = [];
-
-let matchMode = false;
-let matchWords = [];
-let matchCategories = [];
-let selectedWord = null;
-let matchedCount = 0;
-
-
-/* =========================================================
-   SOALAN SAINS TAHUN 4
-   ========================================================= */
-
-const questions = [
-
-  {
-    q:"Antara berikut, haiwan yang manakah ialah herbivor?",
-    answers:["Harimau","Kambing","Helang","Buaya"],
-    correct:1
-  },
-
-  {
-    q:"Haiwan yang makan tumbuhan dan haiwan lain dikenali sebagai...",
-    answers:["Herbivor","Karnivor","Omnivor","Mamalia"],
-    correct:2
-  },
-
-  {
-    q:"Haiwan yang mempunyai tulang belakang dikenali sebagai...",
-    answers:["Vertebrata","Invertebrata","Serangga","Moluska"],
-    correct:0
-  },
-
-  {
-    q:"Antara berikut, yang manakah merupakan mamalia?",
-    answers:["Ayam","Ikan","Kucing","Katak"],
-    correct:2
-  },
-
-  {
-    q:"Apakah fungsi utama rangka manusia?",
-    answers:[
-      "Membantu penghadaman",
-      "Menyokong dan melindungi badan",
-      "Menghasilkan makanan",
-      "Mengawal suhu air"
-    ],
-    correct:1
-  },
-
-  {
-    q:"Haiwan yang bernafas menggunakan insang ialah...",
-    answers:["Ikan","Kucing","Ayam","Belalang"],
-    correct:0
-  },
-
-  {
-    q:"Manusia tergolong dalam kumpulan...",
-    answers:["Mamalia","Reptilia","Amfibia","Ikan"],
-    correct:0
-  },
-
-  {
-    q:"Antara berikut, yang manakah karnivor?",
-    answers:["Arnab","Lembu","Harimau","Kambing"],
-    correct:2
-  },
-
-  {
-    q:"Apakah yang diperlukan manusia untuk terus hidup?",
-    answers:["Udara","Batu","Plastik","Kaca"],
-    correct:0
-  },
-
-  {
-    q:"Haiwan yang tidak mempunyai tulang belakang dikenali sebagai...",
-    answers:["Vertebrata","Mamalia","Invertebrata","Reptilia"],
-    correct:2
-  }
-
+const questions=[
+ ["Antara berikut, haiwan yang manakah ialah herbivor?",["Harimau","Kambing","Helang","Buaya"],1],
+ ["Haiwan yang makan tumbuhan dan haiwan lain dikenali sebagai...",["Herbivor","Karnivor","Omnivor","Mamalia"],2],
+ ["Haiwan yang mempunyai tulang belakang dikenali sebagai...",["Vertebrata","Invertebrata","Serangga","Moluska"],0],
+ ["Antara berikut, yang manakah merupakan mamalia?",["Ayam","Ikan","Kucing","Katak"],2],
+ ["Apakah fungsi utama rangka manusia?",["Membantu penghadaman","Menyokong dan melindungi badan","Menghasilkan makanan","Mengawal suhu air"],1],
+ ["Haiwan yang bernafas menggunakan insang ialah...",["Ikan","Kucing","Ayam","Belalang"],0],
+ ["Manusia tergolong dalam kumpulan...",["Mamalia","Reptilia","Amfibia","Ikan"],0],
+ ["Antara berikut, yang manakah karnivor?",["Arnab","Lembu","Harimau","Kambing"],2],
+ ["Apakah yang diperlukan manusia untuk terus hidup?",["Udara","Batu","Plastik","Kaca"],0],
+ ["Haiwan yang tidak mempunyai tulang belakang dikenali sebagai...",["Vertebrata","Mamalia","Invertebrata","Reptilia"],2]
 ];
 
-
-/* =========================================================
-   MATCHING DATA
-   ========================================================= */
-
-const matchingData = [
-
-  {
-    words:["Kucing","Helang","Kambing"],
-    categories:["Herbivor","Karnivor","Omnivor"],
-    correct:{
-      "Kucing":"Karnivor",
-      "Helang":"Karnivor",
-      "Kambing":"Herbivor"
-    }
-  },
-
-  {
-    words:["Manusia","Ikan","Ayam"],
-    categories:["Mamalia","Ikan","Burung"],
-    correct:{
-      "Manusia":"Mamalia",
-      "Ikan":"Ikan",
-      "Ayam":"Burung"
-    }
-  }
-
+const matches=[
+ {words:["Kucing","Helang","Kambing"],cats:["Herbivor","Karnivor","Omnivor"],ok:{Kucing:"Karnivor",Helang:"Karnivor",Kambing:"Herbivor"}},
+ {words:["Manusia","Ikan","Ayam"],cats:["Mamalia","Ikan","Burung"],ok:{Manusia:"Mamalia",Ikan:"Ikan",Ayam:"Burung"}}
 ];
 
+function resize(){
+  const d=Math.min(devicePixelRatio||1,2);
+  canvas.width=Math.floor(innerWidth*d); canvas.height=Math.floor(innerHeight*d);
+  canvas.style.width=innerWidth+"px";canvas.style.height=innerHeight+"px";
+  ctx.setTransform(d,0,0,d,0,0);
+}
+addEventListener("resize",resize); resize();
 
-/* =========================================================
-   CAMERA + MEDIAPIPE INITIALIZATION
-   ========================================================= */
-
-activateBtn.addEventListener("click", async () => {
-
-  activateBtn.disabled = true;
-  loadingText.textContent = "Memulakan kamera...";
-
-  try {
-
-    await startCamera();
-
-    loadingText.textContent = "Memuatkan Hand Tracking...";
-
-    await initializeHandLandmarker();
-
-    trackingReady = true;
-
-    loadingText.textContent = "Kamera dan Hand Tracking siap.";
-
-    await delay(500);
-
-    startScreen.style.display = "none";
-
-    resizeCanvas();
-
-    gameStarted = true;
-
-    startGame();
-
-    trackingLoop();
-
-  } catch(error) {
-
-    console.error(error);
-
-    showError(
-      "Permainan tidak dapat dimulakan.\n\n" +
-      "Sebab:\n" +
-      (error?.message || error) +
-      "\n\nPastikan:\n" +
-      "• Anda membenarkan akses kamera.\n" +
-      "• Gunakan HTTPS / GitHub Pages / Netlify.\n" +
-      "• Internet tersedia untuk memuatkan MediaPipe."
-    );
-
-  }
-
-});
-
-
-/* =========================================================
-   START CAMERA
-   ========================================================= */
+function fail(msg){
+  console.error(msg);
+  start.style.display="none";match.style.display="none";error.style.display="flex";
+  errmsg.textContent=msg;
+}
 
 async function startCamera(){
-
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-
-    throw new Error(
-      "Browser ini tidak menyokong getUserMedia()."
-    );
-
-  }
-
-  stream = await navigator.mediaDevices.getUserMedia({
-
-    video:{
-      facingMode:"user",
-      width:{
-        ideal:1280
-      },
-      height:{
-        ideal:720
-      },
-      frameRate:{
-        ideal:30,
-        max:30
-      }
-    },
-
-    audio:false
-
-  });
-
-  video.srcObject = stream;
-
-  await video.play();
-
-  await new Promise(resolve => {
-
-    if(video.readyState >= 2){
-      resolve();
-      return;
-    }
-
-    video.onloadeddata = () => resolve();
-
-  });
-
-}
-
-
-/* =========================================================
-   MEDIAPIPE HAND LANDMARKER
-   ========================================================= */
-
-async function initializeHandLandmarker(){
-
-  const vision = await FilesetResolver.forVisionTasks(
-
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
-
-  );
-
-  handLandmarker = await HandLandmarker.createFromOptions(
-
-    vision,
-
-    {
-
-      baseOptions:{
-
-        modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/" +
-        "hand_landmarker/hand_landmarker/" +
-        "float16/1/hand_landmarker.task",
-
-        delegate:"GPU"
-
-      },
-
-      runningMode:"VIDEO",
-
-      numHands:1,
-
-      minHandDetectionConfidence:0.5,
-
-      minHandPresenceConfidence:0.5,
-
-      minTrackingConfidence:0.5
-
-    }
-
-  );
-
-}
-
-
-/* =========================================================
-   TRACKING LOOP
-   ========================================================= */
-
-function trackingLoop(){
-
-  if(!trackingReady || !handLandmarker){
-
-    return;
-
-  }
-
+  if(!window.isSecureContext) throw new Error("HTTPS diperlukan. Buka melalui GitHub Pages atau Netlify, bukan file://.");
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error("Browser ini tidak menyokong getUserMedia(). Cuba Google Chrome Android.");
   try{
-
-    if(video.readyState >= 2 && video.currentTime !== lastVideoTime){
-
-      const results =
-        handLandmarker.detectForVideo(
-          video,
-          performance.now()
-        );
-
-      lastVideoTime = video.currentTime;
-
-      processHand(results);
-
-    }
-
-  }catch(error){
-
-    console.error("Tracking error:",error);
-
+    stream=await navigator.mediaDevices.getUserMedia({
+      audio:false,
+      video:{facingMode:{ideal:"user"},width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}
+    });
+  }catch(e){
+    const n=e?.name||"UnknownError";
+    if(n==="NotAllowedError") throw new Error("Akses kamera ditolak. Tekan ikon kunci kamera pada Chrome dan benarkan Camera.");
+    if(n==="NotFoundError") throw new Error("Kamera tidak ditemui pada peranti.");
+    if(n==="NotReadableError") throw new Error("Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi kamera/Meet/Zoom dan cuba lagi.");
+    throw new Error("getUserMedia gagal: "+n+" — "+(e?.message||"ralat tidak diketahui"));
   }
-
-  animationFrame =
-    requestAnimationFrame(trackingLoop);
-
+  video.srcObject=stream;
+  await video.play();
+  await new Promise((resolve,reject)=>{
+    const t=setTimeout(()=>reject(new Error("Kamera tidak memberi video dalam masa 8 saat.")),8000);
+    if(video.readyState>=2){clearTimeout(t);resolve();return}
+    video.addEventListener("loadeddata",()=>{clearTimeout(t);resolve()},{once:true});
+  });
 }
 
-
-/* =========================================================
-   PROCESS INDEX FINGER
-   ========================================================= */
-
-function processHand(results){
-
-  pointer.visible = false;
-
-  if(
-    !results ||
-    !results.landmarks ||
-    results.landmarks.length === 0
-  ){
-
-    resetTarget();
-
-    return;
-
+async function loadMediaPipe(){
+  statusEl.textContent="Kamera hidup ✓ Memuatkan Hand Tracking...";
+  let mod;
+  try{
+    mod=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm");
+  }catch(e){
+    throw new Error("MediaPipe gagal dimuatkan daripada CDN. Semak sambungan Internet dan cuba refresh. Butiran: "+(e?.message||e));
   }
-
-  const hand = results.landmarks[0];
-
-  /*
-    MediaPipe index fingertip:
-    landmark 8
-  */
-
-  const tip = hand[8];
-
-  if(!tip){
-
-    resetTarget();
-
-    return;
-
+  const {HandLandmarker,FilesetResolver}=mod;
+  const vision=await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
+  );
+  const model="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
+  try{
+    handLandmarker=await HandLandmarker.createFromOptions(vision,{
+      baseOptions:{modelAssetPath:model,delegate:"GPU"},
+      runningMode:"VIDEO",numHands:1,
+      minHandDetectionConfidence:.5,minHandPresenceConfidence:.5,minTrackingConfidence:.5
+    });
+  }catch(gpuErr){
+    console.warn("GPU gagal, cuba CPU",gpuErr);
+    handLandmarker=await HandLandmarker.createFromOptions(vision,{
+      baseOptions:{modelAssetPath:model,delegate:"CPU"},
+      runningMode:"VIDEO",numHands:1,
+      minHandDetectionConfidence:.5,minHandPresenceConfidence:.5,minTrackingConfidence:.5
+    });
   }
-
-  /*
-    Mirror X because video is mirrored.
-  */
-
-  const x = (1 - tip.x) * canvas.width;
-  const y = tip.y * canvas.height;
-
-  pointer.x = x;
-  pointer.y = y;
-  pointer.visible = true;
-
-  drawPointer();
-
-  if(matchMode){
-
-    handleMatchingPointer();
-
-  }else{
-
-    handleAnswerPointer();
-
-  }
-
 }
 
-
-/* =========================================================
-   NORMAL ANSWER POINTER
-   ========================================================= */
-
-function handleAnswerPointer(){
-
-  const elements =
-    [...document.querySelectorAll(".answer")];
-
-  let hit = null;
-
-  for(const el of elements){
-
-    const rect = el.getBoundingClientRect();
-
-    if(
-
-      pointer.x >= rect.left &&
-      pointer.x <= rect.right &&
-      pointer.y >= rect.top &&
-      pointer.y <= rect.bottom
-
-    ){
-
-      hit = el;
-      break;
-
-    }
-
+activate.addEventListener("click",async()=>{
+  activate.disabled=true;
+  statusEl.textContent="Membuka kamera...";
+  try{
+    await startCamera();
+    statusEl.textContent="Kamera hidup ✓";
+    await loadMediaPipe();
+    ready=true;
+    start.style.display="none";
+    startGame();
+    requestAnimationFrame(loop);
+  }catch(e){
+    fail("Permainan tidak dapat dimulakan.\n\n"+(e?.message||e)+"\n\nPastikan:\n• GitHub Pages menggunakan HTTPS\n• Kamera Chrome dibenarkan\n• Internet tersedia untuk MediaPipe");
   }
+});
 
-  if(!hit){
-
-    resetTarget();
-
-    return;
-
-  }
-
-  if(targetElement !== hit){
-
-    resetTarget();
-
-    targetElement = hit;
-
-    targetStartTime = performance.now();
-
-    hit.classList.add("locked");
-
-  }
-
-  const elapsed =
-    performance.now() - targetStartTime;
-
-  const progress =
-    Math.min(elapsed / HOLD_TIME,1);
-
-  progressBar.style.width =
-    (progress * 100) + "%";
-
-  if(progress >= 1){
-
-    selectAnswer(hit);
-
-    resetTarget();
-
-  }
-
-}
-
-
-/* =========================================================
-   ANSWER SELECTION
-   ========================================================= */
-
-function selectAnswer(element){
-
-  if(!element || element.dataset.used === "1"){
-
-    return;
-
-  }
-
-  element.dataset.used = "1";
-
-  const selected =
-    Number(element.dataset.index);
-
-  const current =
-    questions[questionIndex];
-
-  if(selected === current.correct){
-
-    element.classList.add("correct");
-
-    combo++;
-
-    score += 100 + (combo * 20);
-
-    playCorrectSound();
-
-    createParticles(
-      element.getBoundingClientRect(),
-      true
-    );
-
-  }else{
-
-    element.classList.add("wrong");
-
-    combo = 0;
-
-    score = Math.max(0,score - 20);
-
-    playWrongSound();
-
-    createParticles(
-      element.getBoundingClientRect(),
-      false
-    );
-
-  }
-
-  updateStats();
-
-  setTimeout(() => {
-
-    nextQuestion();
-
-  },700);
-
-}
-
-
-/* =========================================================
-   START GAME
-   ========================================================= */
-
-function startGame(){
-
-  score = 0;
-  combo = 0;
-  questionIndex = 0;
-
-  updateStats();
-
-  showQuestion();
-
-}
-
-
-/* =========================================================
-   SHOW QUESTION
-   ========================================================= */
+function startGame(){score=0;combo=0;qi=0;updateStats();showQuestion()}
 
 function showQuestion(){
-
-  const current =
-    questions[questionIndex];
-
-  if(!current){
-
-    finishGame();
-
-    return;
-
-  }
-
-  questionNumberEl.textContent =
-    `SOALAN ${questionIndex + 1} DARIPADA ${questions.length}`;
-
-  questionEl.textContent =
-    current.q;
-
-  answersEl.innerHTML = "";
-
-  current.answers.forEach((answer,index)=>{
-
-    const div =
-      document.createElement("div");
-
-    div.className = "answer";
-
-    div.textContent = answer;
-
-    div.dataset.index = index;
-
-    answersEl.appendChild(div);
-
+  if(qi>=questions.length){finishGame();return}
+  const q=questions[qi];
+  $("qno").textContent=`SOALAN ${qi+1} DARIPADA 10`;
+  $("question").textContent=q[0];
+  $("answers").innerHTML="";
+  q[1].forEach((a,i)=>{
+    const d=document.createElement("div");d.className="answer";d.textContent=a;d.dataset.i=i;
+    $("answers").appendChild(d);
   });
-
-  progressBar.style.width = "0%";
-
+  $("barin").style.width="0%";
 }
 
-
-/* =========================================================
-   NEXT QUESTION
-   ========================================================= */
-
-function nextQuestion(){
-
-  questionIndex++;
-
-  /*
-    Matching challenge di tengah game.
-    Selepas soalan ke-5.
-  */
-
-  if(questionIndex === 5){
-
-    startMatchingChallenge();
-
-    return;
-
-  }
-
+function next(){
+  qi++;
+  if(qi===5){beginMatch();return}
   showQuestion();
-
 }
 
-
-/* =========================================================
-   MATCHING CHALLENGE
-   ========================================================= */
-
-function startMatchingChallenge(){
-
-  matchMode = true;
-
-  selectedWord = null;
-
-  matchedCount = 0;
-
-  const data =
-    matchingData[
-      Math.floor(Math.random() * matchingData.length)
-    ];
-
-  matchWords = [...data.words];
-
-  matchCategories = [...data.categories];
-
-  window.currentMatchingData = data;
-
-  wordColumn.innerHTML = "";
-  categoryColumn.innerHTML = "";
-
-  matchStatus.textContent =
-    "Pilih satu perkataan.";
-
-  matchWords.forEach(word => {
-
-    const item =
-      document.createElement("div");
-
-    item.className = "match-item";
-
-    item.textContent = word;
-
-    item.dataset.type = "word";
-
-    item.dataset.value = word;
-
-    wordColumn.appendChild(item);
-
-  });
-
-  matchCategories.forEach(category => {
-
-    const item =
-      document.createElement("div");
-
-    item.className = "match-item";
-
-    item.textContent = category;
-
-    item.dataset.type = "category";
-
-    item.dataset.value = category;
-
-    categoryColumn.appendChild(item);
-
-  });
-
-  matchingScreen.style.display = "flex";
-
+function answer(el){
+  if(el.dataset.used)return;
+  el.dataset.used="1";
+  const ok=+el.dataset.i===questions[qi][2];
+  if(ok){el.classList.add("correct");combo++;score+=100+combo*20;burst(el,true)}
+  else{el.classList.add("wrong");combo=0;score=Math.max(0,score-20);burst(el,false)}
+  updateStats();resetTarget();
+  setTimeout(next,650);
 }
 
+function beginMatch(){
+  matchMode=true;selectedWord=null;matched=0;
+  currentMatch=matches[Math.floor(Math.random()*matches.length)];
+  $("words").innerHTML="";$("cats").innerHTML="";
+  currentMatch.words.forEach(v=>makeMatch("words","word",v));
+  currentMatch.cats.forEach(v=>makeMatch("cats","cat",v));
+  $("mstatus").textContent="Pilih satu perkataan.";
+  match.style.display="flex";
+}
 
-/* =========================================================
-   MATCHING POINTER
-   ========================================================= */
+function makeMatch(parent,type,value){
+  const d=document.createElement("div");d.className="mi";d.textContent=value;d.dataset.type=type;d.dataset.value=value;
+  $(parent).appendChild(d);
+}
 
-let matchTarget = null;
-let matchHoldStart = 0;
-
-function handleMatchingPointer(){
-
-  const elements =
-    [...document.querySelectorAll(".match-item:not(.matched)")];
-
-  let hit = null;
-
-  for(const el of elements){
-
-    const rect =
-      el.getBoundingClientRect();
-
-    if(
-
-      pointer.x >= rect.left &&
-      pointer.x <= rect.right &&
-      pointer.y >= rect.top &&
-      pointer.y <= rect.bottom
-
-    ){
-
-      hit = el;
-
-      break;
-
-    }
-
-  }
-
-  if(!hit){
-
-    matchTarget = null;
-
-    matchHoldStart = 0;
-
-    document
-      .querySelectorAll(".match-item")
-      .forEach(e => e.classList.remove("target"));
-
+function matchAction(el){
+  if(el.classList.contains("matched"))return;
+  if(el.dataset.type==="word"){
+    selectedWord=el.dataset.value;
+    document.querySelectorAll(".mi").forEach(x=>x.classList.remove("target"));
+    el.classList.add("target");
+    $("mstatus").textContent=`GRAB: ${selectedWord} → pilih kategori.`;
     return;
-
   }
-
-  if(matchTarget !== hit){
-
-    matchTarget = hit;
-
-    matchHoldStart = performance.now();
-
-    document
-      .querySelectorAll(".match-item")
-      .forEach(e => e.classList.remove("target"));
-
-    hit.classList.add("target");
-
+  if(el.dataset.type==="cat"&&selectedWord){
+    if(currentMatch.ok[selectedWord]===el.dataset.value){
+      el.classList.add("matched");
+      [...document.querySelectorAll(".mi")].find(x=>x.dataset.type==="word"&&x.dataset.value===selectedWord)?.classList.add("matched");
+      matched++;combo++;score+=150;burst(el,true);selectedWord=null;
+      $("mstatus").textContent="✓ Betul!";
+      updateStats();
+      if(matched===3)setTimeout(()=>{match.style.display="none";matchMode=false;qi=5;showQuestion()},700);
+    }else{combo=0;score=Math.max(0,score-30);$("mstatus").textContent="✗ Cuba lagi.";updateStats()}
   }
-
-  const elapsed =
-    performance.now() - matchHoldStart;
-
-  if(elapsed >= HOLD_TIME){
-
-    if(hit.dataset.type === "word"){
-
-      grabWord(hit);
-
-    }else if(
-      hit.dataset.type === "category" &&
-      selectedWord
-    ){
-
-      matchPair(hit);
-
-    }
-
-    matchTarget = null;
-    matchHoldStart = 0;
-
-  }
-
 }
 
-
-/* =========================================================
-   GRAB WORD
-   ========================================================= */
-
-function grabWord(element){
-
-  if(element.classList.contains("matched")){
-
-    return;
-
-  }
-
-  selectedWord =
-    element.dataset.value;
-
-  document
-    .querySelectorAll(".match-item")
-    .forEach(e => e.classList.remove("target"));
-
-  element.classList.add("target");
-
-  matchStatus.textContent =
-    `GRAB: ${selectedWord} → pilih kategorinya.`;
-
-  playGrabSound();
-
+function process(result){
+  pointer.visible=false;
+  if(!result?.landmarks?.length){resetTarget();return}
+  const p=result.landmarks[0][8];
+  if(!p){resetTarget();return}
+  pointer.x=(1-p.x)*innerWidth;pointer.y=p.y*innerHeight;pointer.visible=true;
+  if(matchMode)handleMatchPointer();else handleAnswerPointer();
 }
 
-
-/* =========================================================
-   MATCH PAIR
-   ========================================================= */
-
-function matchPair(categoryElement){
-
-  const category =
-    categoryElement.dataset.value;
-
-  const correctCategory =
-    window.currentMatchingData.correct[selectedWord];
-
-  if(category === correctCategory){
-
-    categoryElement.classList.add("matched");
-
-    const wordElement =
-      [...document.querySelectorAll(
-        '.match-item[data-type="word"]'
-      )]
-      .find(
-        el => el.dataset.value === selectedWord
-      );
-
-    if(wordElement){
-
-      wordElement.classList.add("matched");
-
-    }
-
-    matchedCount++;
-
-    combo++;
-
-    score += 150;
-
-    playCorrectSound();
-
-    createParticles(
-      categoryElement.getBoundingClientRect(),
-      true
-    );
-
-    matchStatus.textContent =
-      "✓ Betul! Padanan berjaya.";
-
-    selectedWord = null;
-
-    if(matchedCount >= 3){
-
-      setTimeout(() => {
-
-        matchingScreen.style.display = "none";
-
-        matchMode = false;
-
-        questionIndex = 5;
-
-        showQuestion();
-
-      },900);
-
-    }
-
-  }else{
-
-    combo = 0;
-
-    score = Math.max(0,score - 30);
-
-    playWrongSound();
-
-    matchStatus.textContent =
-      "✗ Cuba lagi.";
-
-  }
-
-  updateStats();
-
+function handleAnswerPointer(){
+  const els=[...document.querySelectorAll(".answer:not([data-used='1'])")];
+  const hit=els.find(el=>{const r=el.getBoundingClientRect();return pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom});
+  if(!hit){resetTarget();return}
+  if(target!==hit){resetTarget();target=hit;targetAt=performance.now();hit.classList.add("lock")}
+  const p=Math.min((performance.now()-targetAt)/HOLD,1);
+  $("barin").style.width=(p*100)+"%";
+  if(p>=1)answer(hit);
 }
 
-
-/* =========================================================
-   RESET TARGET
-   ========================================================= */
+function handleMatchPointer(){
+  const els=[...document.querySelectorAll(".mi:not(.matched)")];
+  const hit=els.find(el=>{const r=el.getBoundingClientRect();return pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom});
+  if(!hit){matchTarget=null;matchAt=0;return}
+  if(matchTarget!==hit){matchTarget=hit;matchAt=performance.now();document.querySelectorAll(".mi").forEach(x=>x.classList.remove("target"));hit.classList.add("target")}
+  if(performance.now()-matchAt>=HOLD){matchAction(hit);matchTarget=null;matchAt=0}
+}
 
 function resetTarget(){
-
-  if(targetElement){
-
-    targetElement.classList.remove("locked");
-
-  }
-
-  targetElement = null;
-
-  targetStartTime = 0;
-
-  progressBar.style.width = "0%";
-
+  if(target)target.classList.remove("lock");
+  target=null;targetAt=0;$("barin").style.width="0%";
 }
 
-
-/* =========================================================
-   POINTER DRAWING
-   ========================================================= */
-
-function drawPointer(){
-
-  /*
-    Pointer is drawn directly on canvas.
-    It follows ONLY the index fingertip.
-  */
-
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  if(!pointer.visible){
-
-    return;
-
-  }
-
-  const x = pointer.x;
-  const y = pointer.y;
-
-  /*
-    Laser
-  */
-
-  ctx.beginPath();
-
-  ctx.moveTo(x,y);
-
-  ctx.lineTo(
-    x,
-    y + Math.min(100,canvas.height * .12)
-  );
-
-  ctx.strokeStyle =
-    "rgba(255,255,255,.35)";
-
-  ctx.lineWidth = 2;
-
-  ctx.stroke();
-
-  /*
-    Target lock ring
-  */
-
-  let radius = 18;
-
-  if(targetElement){
-
-    const elapsed =
-      performance.now() - targetStartTime;
-
-    const p =
-      Math.min(elapsed / HOLD_TIME,1);
-
-    radius =
-      18 + (p * 14);
-
-    ctx.beginPath();
-
-    ctx.arc(
-      x,
-      y,
-      radius,
-      -Math.PI / 2,
-      -Math.PI / 2 + p * Math.PI * 2
-    );
-
-    ctx.strokeStyle = "#ffffff";
-
-    ctx.lineWidth = 4;
-
-    ctx.stroke();
-
-  }
-
-  /*
-    Cursor
-  */
-
-  ctx.beginPath();
-
-  ctx.arc(x,y,7,0,Math.PI*2);
-
-  ctx.fillStyle = "#ffffff";
-
-  ctx.shadowBlur = 16;
-
-  ctx.shadowColor = "#ffffff";
-
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-
-}
-
-
-/* =========================================================
-   PARTICLES
-   ========================================================= */
-
-function createParticles(rect,isCorrect){
-
-  const x =
-    rect.left + rect.width / 2;
-
-  const y =
-    rect.top + rect.height / 2;
-
-  for(let i=0;i<18;i++){
-
-    particles.push({
-
-      x,
-      y,
-
-      vx:
-        (Math.random()-.5) * 6,
-
-      vy:
-        (Math.random()-.5) * 6,
-
-      life:1,
-
-      correct:isCorrect
-
-    });
-
-  }
-
-}
-
-
-/* =========================================================
-   PARTICLE LOOP
-   ========================================================= */
-
-function updateParticles(){
-
-  for(let i=particles.length-1;i>=0;i--){
-
-    const p = particles[i];
-
-    p.x += p.vx;
-    p.y += p.vy;
-
-    p.life -= .035;
-
-    if(p.life <= 0){
-
-      particles.splice(i,1);
-
-      continue;
-
-    }
-
-    ctx.beginPath();
-
-    ctx.arc(
-      p.x,
-      p.y,
-      3,
-      0,
-      Math.PI*2
-    );
-
-    ctx.globalAlpha = p.life;
-
-    ctx.fillStyle =
-      p.correct ? "#ffffff" : "#aaaaaa";
-
-    ctx.fill();
-
-    ctx.globalAlpha = 1;
-
-  }
-
-}
-
-
-/* =========================================================
-   CANVAS RESIZE
-   ========================================================= */
-
-function resizeCanvas(){
-
-  const dpr =
-    Math.min(window.devicePixelRatio || 1,2);
-
-  canvas.width =
-    Math.floor(window.innerWidth * dpr);
-
-  canvas.height =
-    Math.floor(window.innerHeight * dpr);
-
-  canvas.style.width =
-    window.innerWidth + "px";
-
-  canvas.style.height =
-    window.innerHeight + "px";
-
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
-  );
-
-}
-
-window.addEventListener(
-  "resize",
-  resizeCanvas
-);
-
-
-/* =========================================================
-   ANIMATION EFFECTS
-   ========================================================= */
-
-function effectsLoop(){
-
-  if(!pointer.visible){
-
-    ctx.clearRect(
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-  }
-
+function draw(){
+  ctx.clearRect(0,0,innerWidth,innerHeight);
   if(pointer.visible){
-
-    drawPointer();
-
+    const x=pointer.x,y=pointer.y;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+70);ctx.strokeStyle="#fff6";ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fillStyle="#fff";ctx.shadowBlur=15;ctx.shadowColor="#fff";ctx.fill();ctx.shadowBlur=0;
+    if(target){const p=Math.min((performance.now()-targetAt)/HOLD,1);ctx.beginPath();ctx.arc(x,y,18,-Math.PI/2,-Math.PI/2+p*Math.PI*2);ctx.strokeStyle="#fff";ctx.lineWidth=4;ctx.stroke()}
   }
-
-  updateParticles();
-
-  requestAnimationFrame(effectsLoop);
-
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life-=.04;if(p.life<=0){particles.splice(i,1);continue}ctx.globalAlpha=p.life;ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();ctx.globalAlpha=1}
 }
 
-effectsLoop();
-
-
-/* =========================================================
-   STATS
-   ========================================================= */
-
-function updateStats(){
-
-  scoreEl.textContent = score;
-
-  comboEl.textContent = combo;
-
-  counterEl.textContent =
-    `${Math.min(questionIndex + 1,10)}/10`;
-
+function burst(el){
+  const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  for(let i=0;i<18;i++)particles.push({x,y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,life:1});
 }
 
+function loop(){
+  if(ready&&handLandmarker&&video.readyState>=2&&video.currentTime!==lastTime){
+    try{const res=handLandmarker.detectForVideo(video,performance.now());lastTime=video.currentTime;process(res)}
+    catch(e){console.warn("Hand tracking:",e)}
+  }
+  draw();requestAnimationFrame(loop);
+}
 
-/* =========================================================
-   FINISH
-   ========================================================= */
+function updateStats(){$("score").textContent=score;$("combo").textContent=combo;$("count").textContent=`${Math.min(qi+1,10)}/10`}
 
 function finishGame(){
-
-  gameStarted = false;
-
-  finalScore.textContent = score;
-
-  if(score >= 1300){
-
-    finalMessage.textContent =
-      "Hebat! Anda sangat pantas dan menguasai Sains Tahun 4! ⭐";
-
-  }else if(score >= 800){
-
-    finalMessage.textContent =
-      "Syabas! Prestasi anda sangat baik! 👏";
-
-  }else{
-
-    finalMessage.textContent =
-      "Bagus! Teruskan berlatih untuk meningkatkan skor.";
-
-  }
-
-  finishScreen.style.display = "flex";
-
+  finish.style.display="flex";$("finalscore").textContent=score;
+  $("finalmsg").textContent=score>=1300?"Hebat! Penguasaan Sains Tahun 4 sangat baik!":score>=800?"Syabas! Prestasi sangat baik!":"Bagus! Teruskan berlatih untuk meningkatkan skor.";
 }
 
-
-/* =========================================================
-   SOUND EFFECT
-   ========================================================= */
-
-function getAudio(){
-
-  if(!audioContext){
-
-    try{
-
-      audioContext =
-        new (
-          window.AudioContext ||
-          window.webkitAudioContext
-        )();
-
-    }catch(e){
-
-      return null;
-
-    }
-
-  }
-
-  return audioContext;
-
-}
-
-
-function beep(
-  frequency,
-  duration,
-  type="sine",
-  volume=.04
-){
-
-  const audio =
-    getAudio();
-
-  if(!audio){
-
-    return;
-
-  }
-
-  try{
-
-    const oscillator =
-      audio.createOscillator();
-
-    const gain =
-      audio.createGain();
-
-    oscillator.type = type;
-
-    oscillator.frequency.value =
-      frequency;
-
-    gain.gain.setValueAtTime(
-      volume,
-      audio.currentTime
-    );
-
-    gain.gain.exponentialRampToValueAtTime(
-      .001,
-      audio.currentTime + duration
-    );
-
-    oscillator.connect(gain);
-
-    gain.connect(audio.destination);
-
-    oscillator.start();
-
-    oscillator.stop(
-      audio.currentTime + duration
-    );
-
-  }catch(e){
-
-    console.warn("Audio error:",e);
-
-  }
-
-}
-
-
-function playCorrectSound(){
-
-  beep(660,.09,"sine",.045);
-
-  setTimeout(
-    ()=>beep(880,.12,"sine",.045),
-    70
-  );
-
-}
-
-
-function playWrongSound(){
-
-  beep(180,.18,"sawtooth",.035);
-
-}
-
-
-function playGrabSound(){
-
-  beep(440,.07,"square",.025);
-
-}
-
-
-/* =========================================================
-   ERROR HANDLING
-   ========================================================= */
-
-function showError(message){
-
-  startScreen.style.display = "none";
-
-  matchingScreen.style.display = "none";
-
-  errorScreen.style.display = "flex";
-
-  errorText.textContent = message;
-
-}
-
-
-/* =========================================================
-   UTILITIES
-   ========================================================= */
-
-function delay(ms){
-
-  return new Promise(
-    resolve => setTimeout(resolve,ms)
-  );
-
-}
-
-
-/* =========================================================
-   PAGE VISIBILITY
-   ========================================================= */
-
-document.addEventListener(
-  "visibilitychange",
-  ()=>{
-
-    if(
-      document.hidden &&
-      stream
-    ){
-
-      stream.getTracks().forEach(
-        track => track.enabled = false
-      );
-
-    }else if(
-      !document.hidden &&
-      stream
-    ){
-
-      stream.getTracks().forEach(
-        track => track.enabled = true
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   INITIAL CANVAS
-   ========================================================= */
-
-resizeCanvas();
-
+window.addEventListener("pagehide",()=>stream?.getTracks().forEach(t=>t.stop()));
 </script>
-
 </body>
 </html>
