@@ -157,16 +157,57 @@ async function startCamera(){
 
 async function loadMediaPipe(){
   statusEl.textContent="Kamera hidup ✓ Memuatkan Hand Tracking...";
-  let mod;
-  try{
-    mod=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm");
-  }catch(e){
-    throw new Error("MediaPipe gagal dimuatkan daripada CDN. Semak sambungan Internet dan cuba refresh. Butiran: "+(e?.message||e));
+  let mod = null;
+  let cdnErrors = [];
+
+  /* Google kini mendokumentasikan vision_bundle.mjs sebagai cara
+     pemuatan MediaPipe Tasks Vision untuk Web. Kita elakkan
+     endpoint +esm yang menyebabkan ralat dalam sesetengah Chrome. */
+  const cdnUrls = [
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs",
+    "https://unpkg.com/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs"
+  ];
+
+  for (const url of cdnUrls) {
+    try {
+      mod = await import(url);
+      if (mod && mod.HandLandmarker && mod.FilesetResolver) break;
+    } catch (e) {
+      cdnErrors.push(url + " -> " + (e?.message || e));
+    }
   }
+
+  if (!mod || !mod.HandLandmarker || !mod.FilesetResolver) {
+    throw new Error(
+      "MediaPipe tidak dapat dimuatkan.\n\n" +
+      "Cuba pastikan Internet aktif dan refresh halaman.\n\n" +
+      "Sumber yang dicuba:\n" + cdnErrors.join("\n")
+    );
+  }
+
   const {HandLandmarker,FilesetResolver}=mod;
-  const vision=await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
-  );
+  let vision;
+  const wasmUrls = [
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
+    "https://unpkg.com/@mediapipe/tasks-vision@0.10.35/wasm"
+  ];
+
+  let wasmError = null;
+  for (const wasmUrl of wasmUrls) {
+    try {
+      vision = await FilesetResolver.forVisionTasks(wasmUrl);
+      if (vision) break;
+    } catch (e) {
+      wasmError = e;
+    }
+  }
+
+  if (!vision) {
+    throw new Error(
+      "MediaPipe berjaya dimuatkan tetapi fail WASM gagal dimuatkan.\n" +
+      (wasmError?.message || wasmError || "")
+    );
+  }
   const model="https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
   try{
     handLandmarker=await HandLandmarker.createFromOptions(vision,{
