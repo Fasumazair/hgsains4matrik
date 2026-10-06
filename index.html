@@ -7,9 +7,9 @@
 <title>PECUTAN AKHIR — Sains Tahun 4</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;color:#fff;font-family:Arial,sans-serif}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02051a;color:#fff;font-family:Arial,sans-serif}
 #camera{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#050914;z-index:0}
-#shade{position:fixed;inset:0;background:linear-gradient(180deg,#0008,#0001 45%,#0007);z-index:1;pointer-events:none}
+#shade{position:fixed;inset:0;background:radial-gradient(circle at 20% 20%,#253b8a33 0 2px,transparent 3px),radial-gradient(circle at 75% 30%,#ffffff22 0 1px,transparent 2px),radial-gradient(circle at 45% 75%,#6b5cff22 0 2px,transparent 3px),linear-gradient(180deg,#02051a88,#06104a22 45%,#01030eaa);background-size:180px 180px,130px 130px,220px 220px,100% 100%;z-index:1;pointer-events:none}
 #fx{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none}
 #ui{position:fixed;inset:0;z-index:5;pointer-events:none}
 .top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;gap:6px}
@@ -30,7 +30,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050914;col
 .card h1{margin:0;font-size:clamp(31px,8vw,55px);letter-spacing:2px}.card h2{margin:5px 0}.card p{font-size:13px;line-height:1.5;opacity:.82}
 button{width:100%;padding:14px;border:0;border-radius:13px;background:#fff;color:#061020;font-weight:900;font-size:17px}
 #error{display:none}.err{white-space:pre-line;text-align:left;background:#0005;padding:11px;border-radius:10px;font-size:12px}
-#finish{display:none}.final{font-size:50px;font-weight:900}
+#match{display:none}.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.col{display:flex;flex-direction:column;gap:8px}.mi{min-height:50px;border:2px solid #fff4;border-radius:12px;padding:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#06143dcc}.mi.target{border-color:#fff;box-shadow:0 0 20px #7cf8ff}.mi.matched{opacity:.4;border-color:#62ffb0}#finish{display:none}.final{font-size:50px;font-weight:900}
 @media(max-width:600px){.top{top:5px;left:5px;right:5px}.brand{padding:5px 8px}.brand b{font-size:14px}.stat{min-width:50px;padding:3px 5px}.stat b{font-size:13px}#qbox{top:13%}.answer{min-height:48px;font-size:12px}}
 @media(orientation:landscape) and (max-height:500px){#qbox{top:19%}#answers{bottom:5%;grid-template-columns:repeat(4,1fr)}.answer{min-height:40px}}
 </style>
@@ -67,6 +67,18 @@ button{width:100%;padding:14px;border:0;border-radius:13px;background:#fff;color
   <div class="card"><h2>⚠️ RALAT</h2><div class="err" id="errmsg"></div><br><button onclick="location.reload()">CUBA SEMULA</button></div>
 </div>
 
+<div class="overlay" id="match">
+  <div class="card">
+    <h2>🪐 CABARAN ANGKASA: VERTEBRATA vs INVERTEBRATA</h2>
+    <p>Tuding haiwan di kiri dan tahan 0.6 saat. Kemudian tuding kategori yang betul di kanan dan tahan 0.6 saat.</p>
+    <div class="matchgrid">
+      <div class="col" id="words"></div>
+      <div class="col" id="cats"></div>
+    </div>
+    <p id="mstatus">Pilih haiwan.</p>
+  </div>
+</div>
+
 <div class="overlay" id="finish">
   <div class="card"><h1>🏆 TAMAT!</h1><p>PECUTAN AKHIR</p><div class="final" id="finalscore">0</div><p id="finalmsg"></p><button onclick="location.reload()">MAIN SEMULA</button></div>
 </div>
@@ -87,7 +99,7 @@ const activate=$("activate"), statusEl=$("status"), errmsg=$("errmsg");
 let stream=null, handLandmarker=null, lastTime=-1, ready=false;
 let pointer={x:0,y:0,visible:false}, target=null, targetAt=0;
 const HOLD=600;
-let score=0,combo=0,qi=0,particles=[];
+let score=0,combo=0,qi=0,particles=[];\nlet matchMode=false,selectedWord=null,matched=0,currentMatch=null,matchTarget=null,matchAt=0;
 
 const questions=[
   {
@@ -151,6 +163,19 @@ const questions=[
     correct:2
   }
 ];
+const matchingData=[
+  {
+    words:["🐟 Ikan","🦋 Rama-rama","🐱 Kucing"],
+    cats:["VERTEBRATA","INVERTEBRATA"],
+    ok:{
+      "🐟 Ikan":"VERTEBRATA",
+      "🦋 Rama-rama":"INVERTEBRATA",
+      "🐱 Kucing":"VERTEBRATA"
+    }
+  }
+];
+
+
 
 [
  {words:["Kucing","Helang","Kambing"],cats:["Herbivor","Karnivor","Omnivor"],ok:{Kucing:"Karnivor",Helang:"Karnivor",Kambing:"Herbivor"}},
@@ -301,6 +326,7 @@ function showQuestion(){
 
 function next(){
   qi++;
+  if(qi===5){beginMatch();return;}
   showQuestion();
 }
 
@@ -312,7 +338,7 @@ function answer(el){
     el.classList.add("correct");
     combo++;
     score+=100+combo*20;
-    burst(el,true);
+    burst(el,true); applause();
   }else{
     el.classList.add("wrong");
     combo=0;
@@ -324,13 +350,78 @@ function answer(el){
   setTimeout(next,650);
 }
 
+
+function beginMatch(){
+  matchMode=true; selectedWord=null; matched=0;
+  currentMatch=matchingData[0];
+  $("words").innerHTML=""; $("cats").innerHTML="";
+  currentMatch.words.forEach(v=>makeMatch("words","word",v));
+  currentMatch.cats.forEach(v=>makeMatch("cats","cat",v));
+  $("mstatus").textContent="Pilih haiwan.";
+  $("match").style.display="flex";
+}
+
+function makeMatch(parent,type,value){
+  const d=document.createElement("div");
+  d.className="mi"; d.textContent=value;
+  d.dataset.type=type; d.dataset.value=value;
+  $(parent).appendChild(d);
+}
+
+function handleMatchPointer(){
+  const els=[...document.querySelectorAll(".mi:not(.matched)")];
+  const hit=els.find(el=>{
+    const r=el.getBoundingClientRect();
+    return pointer.x>=r.left&&pointer.x<=r.right&&pointer.y>=r.top&&pointer.y<=r.bottom;
+  });
+  if(!hit){matchTarget=null;matchAt=0;return}
+  if(matchTarget!==hit){
+    matchTarget=hit;matchAt=performance.now();
+    document.querySelectorAll(".mi").forEach(x=>x.classList.remove("target"));
+    hit.classList.add("target");
+  }
+  if(performance.now()-matchAt>=HOLD){
+    matchAction(hit);matchTarget=null;matchAt=0;
+  }
+}
+
+function matchAction(el){
+  if(el.classList.contains("matched"))return;
+  if(el.dataset.type==="word"){
+    selectedWord=el.dataset.value;
+    document.querySelectorAll(".mi").forEach(x=>x.classList.remove("target"));
+    el.classList.add("target");
+    $("mstatus").textContent="Haiwan dipilih. Sekarang pilih VERTEBRATA atau INVERTEBRATA.";
+    return;
+  }
+  if(el.dataset.type==="cat"&&selectedWord){
+    const correct=currentMatch.ok[selectedWord];
+    if(el.dataset.value===correct){
+      el.classList.add("matched");
+      [...document.querySelectorAll(".mi")].find(x=>x.dataset.type==="word"&&x.dataset.value===selectedWord)?.classList.add("matched");
+      matched++; combo++; score+=150; burst(el,true); applause();
+      selectedWord=null; updateStats();
+      $("mstatus").textContent="👏 Betul! Padanan berjaya.";
+      if(matched===currentMatch.words.length){
+        setTimeout(()=>{
+          $("match").style.display="none";
+          matchMode=false; qi=5; showQuestion();
+        },900);
+      }
+    }else{
+      combo=0; score=Math.max(0,score-30); updateStats();
+      $("mstatus").textContent="✗ Salah kategori. Cuba lagi.";
+    }
+  }
+}
+
 function process(result){
   pointer.visible=false;
   if(!result?.landmarks?.length){resetTarget();return}
   const p=result.landmarks[0][8];
   if(!p){resetTarget();return}
   pointer.x=(1-p.x)*innerWidth;pointer.y=p.y*innerHeight;pointer.visible=true;
-  handleAnswerPointer();
+  if(matchMode) handleMatchPointer(); else handleAnswerPointer();
 }
 
 function handleAnswerPointer(){
@@ -378,6 +469,26 @@ function loop(){
     catch(e){console.warn("Hand tracking:",e)}
   }
   draw();requestAnimationFrame(loop);
+}
+
+
+function applause(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return;
+    const ac=new AC();
+    const now=ac.currentTime;
+    [660,880,1046,1320].forEach((f,i)=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type="triangle";o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,now+i*.08);
+      g.gain.exponentialRampToValueAtTime(.06,now+i*.08+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,now+i*.08+.18);
+      o.connect(g);g.connect(ac.destination);
+      o.start(now+i*.08);o.stop(now+i*.08+.2);
+    });
+    setTimeout(()=>ac.close().catch(()=>{}),700);
+  }catch(e){console.warn("Audio:",e)}
 }
 
 function updateStats(){$("score").textContent=score;$("combo").textContent=combo;$("count").textContent=`${Math.min(qi+1,10)}/10`}
